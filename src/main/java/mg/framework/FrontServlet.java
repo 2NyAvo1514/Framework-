@@ -1,61 +1,80 @@
 package mg.framework;
 
+import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.RequestDispatcher;
+// import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
+import java.lang.reflect.*;
+// import java.net.URL;
+import java.util.*;
+import java.util.logging.*;
 
+// import mg.annotation.Controller;
+// import mg.annotation.Route;
+// import mg.annotation.RouteMapping;
+import mg.util.Scan;
 
-@WebServlet(name = "FrontServlet", urlPatterns = {"/"}, loadOnStartup = 1)
+@WebServlet(name = "FrontServlet", urlPatterns = { "/*" }, loadOnStartup = 1)
 public class FrontServlet extends HttpServlet {
-    
+    private static final Logger logger = Logger.getLogger(FrontServlet.class.getName());
+
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) 
-            throws ServletException, IOException {
-        service(request, response);
+    public void init() throws ServletException {
+        ServletContext context = getServletContext();
+
+        Map<String, Method> routeMapping = new HashMap<>();
+        Map<Class<?>, Object> controllerInstances = new HashMap<>();
+
+        Scan.scanControllers(context, routeMapping, controllerInstances);
+
+        // Stocker dans le ServletContext pour tout le projet
+        context.setAttribute("routeMapping", routeMapping);
+        context.setAttribute("controllerInstances", controllerInstances);
+
+        System.out.println("🚀 Framework initialisé avec " + routeMapping.size() + " routes");
     }
-    
+
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) 
+    protected void service(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        service(request, response);
-    }
-    
-    @Override
-    protected void service(HttpServletRequest request, HttpServletResponse response) 
-            throws ServletException, IOException {
+        // 🔹 Récupérer les maps globales
+        Map<String, Method> routeMapping = (Map<String, Method>) getServletContext().getAttribute("routeMapping");
+        Map<Class<?>, Object> controllerInstances = (Map<Class<?>, Object>) getServletContext()
+                .getAttribute("controllerInstances");
         String requestURI = request.getRequestURI();
         String contextPath = request.getContextPath();
-        
         String resourcePath = requestURI.substring(contextPath.length());
-        
-        try {
-            java.net.URL resource = getServletContext().getResource(resourcePath);
-            if (resource != null) {
-                RequestDispatcher defaultServlet = getServletContext().getNamedDispatcher("default");
-                if (defaultServlet != null) {
-                    defaultServlet.forward(request, response);
-                    return;
-                }
+        Method mappedMethod = routeMapping.get(resourcePath);
+        if (mappedMethod != null) {
+            try {
+                Object controller = controllerInstances.get(mappedMethod.getDeclaringClass());
+                Object result = mappedMethod.invoke(controller);
+                response.setContentType("text/html;charset=UTF-8");
+                PrintWriter out = response.getWriter();
+                out.print(result != null ? result.toString() : "(Aucun contenu)");
+                return;
+            } catch (Exception e) {
+                e.printStackTrace();
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                response.getWriter().println("Erreur dans le contrôleur : " + e.getMessage());
+                return;
             }
-        } catch (Exception e) {
-            throw new ServletException("Erreur lors de la vérification de la ressource: " + resourcePath, e);
         }
-        
+        // 🔸 Sinon : page non trouvée
         showFrameworkPage(request, response, resourcePath);
     }
-    
-    private void showFrameworkPage(HttpServletRequest request, HttpServletResponse response, 
-                                 String requestedPath) 
+
+    private void showFrameworkPage(HttpServletRequest request, HttpServletResponse response,
+            String requestedPath)
             throws IOException {
-        
+
         response.setContentType("text/html;charset=UTF-8");
         PrintWriter out = response.getWriter();
-        
+
         out.println("<!DOCTYPE html>");
         out.println("<html lang='fr'>");
         out.println("<head>");
@@ -63,25 +82,24 @@ public class FrontServlet extends HttpServlet {
         out.println("    <meta name='viewport' content='width=device-width, initial-scale=1.0'>");
         out.println("    <title>Framework Java - Page non trouvée</title>");
         out.println("    <style>");
-        out.println("        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 40px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); color: #212529; min-height: 100vh; }");
-        out.println("        .container { max-width: 600px; margin: 0 auto; background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #e9ecef; }");
-        out.println("        h1 { color: #212529; text-align: center; margin-bottom: 30px; padding-bottom: 15px; border-bottom: 2px solid #333; font-weight: 300; font-size: 2.5em; }");
-        out.println("        .message { background: #f8f9fa; padding: 25px; border-radius: 12px; border-left: 4px solid #333; margin: 25px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }");
-        out.println("        .path { font-family: 'Courier New', monospace; background: #e9ecef; padding: 12px 16px; border-radius: 8px; display: inline-block; margin: 15px 0; font-weight: bold; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }");
-        out.println("        .footer { margin-top: 30px; text-align: center; color: #6c757d; font-size: 14px; padding-top: 20px; border-top: 1px solid #dee2e6; }");
-        out.println("        p { line-height: 1.6; margin-bottom: 15px; color: #495057; }");
-        out.println("        h3 { color: #333; margin-bottom: 15px; font-weight: 500; }");
+        out.println("        body { font-family: sans-serif; padding: 40px; background: #f0f2f5; color: #333; }");
+        out.println(
+                "        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }");
         out.println("    </style>");
         out.println("</head>");
         out.println("<body>");
         out.println("    <div class='container'>");
-        out.println("        <h1>FRAMEWORK JAVA</h1>");
-        
-        out.println("        <div class='message'>");
-        out.println("            <h3>Ressource non trouvée</h3>");
-        out.println("            <p>Voici l'URL demandée :</p>");
-        out.println("            <div class='path'><strong>" + requestedPath + "</strong></div>");
-        out.println("        </div>");
+        out.println("        <h1>Framework Java</h1>");
+        out.println("        <h3>Aucune route trouvée pour :</h3>");
+        out.println("        <p><code>" + requestedPath + "</code></p>");
+        // Map<String, Method> routeMapping = (Map<String, Method>) getServletContext().getAttribute("ROUTE_MAPPING");
+        // // Map<Class<?>, Object> controllerInstances = (Map<Class<?>, Object>)
+        // // getServletContext()
+        // // .getAttribute("CONTROLLER_INSTANCES");
+        // String requestURI = request.getRequestURI();
+        // String contextPath = request.getContextPath();
+        // String resourcePath = requestURI.substring(contextPath.length());
+        // out.println("        <p> -------------------->" + routeMapping.get(resourcePath) + "<--------------------</p>");
         out.println("    </div>");
         out.println("</body>");
         out.println("</html>");
