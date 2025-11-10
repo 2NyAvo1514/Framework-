@@ -43,22 +43,27 @@ public class FrontServlet extends HttpServlet {
             throws ServletException, IOException {
         // 🔹 Récupérer les maps globales
         Map<String, Method> routeMapping = (Map<String, Method>) getServletContext().getAttribute("routeMapping");
-        // Map<Class<?>, Object> controllerInstances = (Map<Class<?>, Object>) getServletContext()
-                // .getAttribute("controllerInstances");
+        Map<Class<?>, Object> controllerInstances = (Map<Class<?>, Object>) getServletContext()
+                .getAttribute("controllerInstances");
         String requestURI = request.getRequestURI();
         String contextPath = request.getContextPath();
         String resourcePath = requestURI.substring(contextPath.length());
         Method mappedMethod = routeMapping.get(resourcePath);
         if (mappedMethod != null) {
             try {
-                // Object controller = controllerInstances.get(mappedMethod.getDeclaringClass());
-                // Object result = mappedMethod.invoke(controller);
-                response.setContentType("text/html;charset=UTF-8");
-                PrintWriter out = response.getWriter();
-                out.print("Route :<b> "+ requestURI +" </b>");
-                out.print("Methode :<b> "+ mappedMethod.getName()+" </b>");
-                out.print("Classe :<b>"+ mappedMethod.getDeclaringClass().getSimpleName()+" </b>");
-                // out.print(result != null ? result.toString() : "(Aucun contenu)");
+                if (mappedMethod.getReturnType().equals(String.class)) {
+                    Object controller = controllerInstances.get(mappedMethod.getDeclaringClass());
+                    Object result = mappedMethod.invoke(controller);
+                    response.setContentType("text/html;charset=UTF-8");
+                    PrintWriter out = response.getWriter();
+                    out.print(result != null ? result.toString() : "(Aucun contenu)");
+                } else {
+                    response.setContentType("text/html;charset=UTF-8");
+                    PrintWriter out = response.getWriter();
+                    out.print("Route :<b> " + requestURI + " </b>");
+                    out.print("Methode :<b> " + mappedMethod.getName() + " </b>");
+                    out.print("Classe :<b>" + mappedMethod.getDeclaringClass().getSimpleName() + " </b>");
+                }
                 return;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -95,14 +100,16 @@ public class FrontServlet extends HttpServlet {
         out.println("        <h1>Framework Java</h1>");
         out.println("        <h3>Aucune route trouvée pour :</h3>");
         out.println("        <p><code>" + requestedPath + "</code></p>");
-        // Map<String, Method> routeMapping = (Map<String, Method>) getServletContext().getAttribute("ROUTE_MAPPING");
+        // Map<String, Method> routeMapping = (Map<String, Method>)
+        // getServletContext().getAttribute("ROUTE_MAPPING");
         // // Map<Class<?>, Object> controllerInstances = (Map<Class<?>, Object>)
         // // getServletContext()
         // // .getAttribute("CONTROLLER_INSTANCES");
         // String requestURI = request.getRequestURI();
         // String contextPath = request.getContextPath();
         // String resourcePath = requestURI.substring(contextPath.length());
-        // out.println("        <p> -------------------->" + routeMapping.get(resourcePath) + "<--------------------</p>");
+        // out.println(" <p> -------------------->" + routeMapping.get(resourcePath) +
+        // "<--------------------</p>");
         out.println("    </div>");
         out.println("</body>");
         out.println("</html>");
