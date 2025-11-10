@@ -43,22 +43,81 @@ public class FrontServlet extends HttpServlet {
             throws ServletException, IOException {
         // 🔹 Récupérer les maps globales
         Map<String, Method> routeMapping = (Map<String, Method>) getServletContext().getAttribute("routeMapping");
-        // Map<Class<?>, Object> controllerInstances = (Map<Class<?>, Object>) getServletContext()
-                // .getAttribute("controllerInstances");
+        // Map<Class<?>, Object> controllerInstances = (Map<Class<?>, Object>)
+        // getServletContext()
+        // .getAttribute("controllerInstances");
         String requestURI = request.getRequestURI();
         String contextPath = request.getContextPath();
         String resourcePath = requestURI.substring(contextPath.length());
         Method mappedMethod = routeMapping.get(resourcePath);
         if (mappedMethod != null) {
             try {
-                // Object controller = controllerInstances.get(mappedMethod.getDeclaringClass());
-                // Object result = mappedMethod.invoke(controller);
                 response.setContentType("text/html;charset=UTF-8");
                 PrintWriter out = response.getWriter();
-                out.print("Route :<b> "+ requestURI +" </b>");
-                out.print("Methode :<b> "+ mappedMethod.getName()+" </b>");
-                out.print("Classe :<b>"+ mappedMethod.getDeclaringClass().getSimpleName()+" </b>");
-                // out.print(result != null ? result.toString() : "(Aucun contenu)");
+
+                out.println("""
+                        <!DOCTYPE html>
+                        <html lang='fr'>
+                        <head>
+                            <meta charset='UTF-8'>
+                            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+                            <title>Route détectée</title>
+                            <style>
+                                body {
+                                    font-family: "Segoe UI", Arial, sans-serif;
+                                    background: #f7f8fa;
+                                    color: #333;
+                                    margin: 0;
+                                    padding: 40px;
+                                }
+                                .container {
+                                    background: white;
+                                    max-width: 700px;
+                                    margin: auto;
+                                    padding: 30px;
+                                    border-radius: 12px;
+                                    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+                                }
+                                h1 {
+                                    color: #2b6cb0;
+                                    text-align: center;
+                                }
+                                .info {
+                                    margin-top: 20px;
+                                    line-height: 1.8;
+                                    font-size: 1.1em;
+                                }
+                                code {
+                                    background: #edf2f7;
+                                    padding: 3px 6px;
+                                    border-radius: 4px;
+                                    color: #2d3748;
+                                    font-family: Consolas, monospace;
+                                }
+                                .footer {
+                                    text-align: center;
+                                    margin-top: 30px;
+                                    font-size: 0.9em;
+                                    color: #666;
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="container">
+                                <h1>✅ Route détectée</h1>
+                                <div class="info">
+                                    <p><b>Route :</b> <code>%s</code></p>
+                                    <p><b>Méthode :</b> <code>%s()</code></p>
+                                    <p><b>Classe :</b> <code>%s</code></p>
+                                </div>
+                                <div class="footer">
+                                    <p>Framework Java — <i>Debug View</i></p>
+                                </div>
+                            </div>
+                        </body>
+                        </html>
+                        """.formatted(requestURI, mappedMethod.getName(),
+                        mappedMethod.getDeclaringClass().getSimpleName()));
                 return;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -95,14 +154,16 @@ public class FrontServlet extends HttpServlet {
         out.println("        <h1>Framework Java</h1>");
         out.println("        <h3>Aucune route trouvée pour :</h3>");
         out.println("        <p><code>" + requestedPath + "</code></p>");
-        // Map<String, Method> routeMapping = (Map<String, Method>) getServletContext().getAttribute("ROUTE_MAPPING");
+        // Map<String, Method> routeMapping = (Map<String, Method>)
+        // getServletContext().getAttribute("ROUTE_MAPPING");
         // // Map<Class<?>, Object> controllerInstances = (Map<Class<?>, Object>)
         // // getServletContext()
         // // .getAttribute("CONTROLLER_INSTANCES");
         // String requestURI = request.getRequestURI();
         // String contextPath = request.getContextPath();
         // String resourcePath = requestURI.substring(contextPath.length());
-        // out.println("        <p> -------------------->" + routeMapping.get(resourcePath) + "<--------------------</p>");
+        // out.println(" <p> -------------------->" + routeMapping.get(resourcePath) +
+        // "<--------------------</p>");
         out.println("    </div>");
         out.println("</body>");
         out.println("</html>");
