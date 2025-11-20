@@ -1,5 +1,6 @@
 package mg.framework;
 
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 // import jakarta.servlet.RequestDispatcher;
@@ -13,6 +14,7 @@ import java.lang.reflect.*;
 import java.util.*;
 import java.util.logging.*;
 
+import mg.attribute.ModelView;
 // import mg.annotation.Controller;
 // import mg.annotation.Route;
 // import mg.annotation.RouteMapping;
@@ -49,14 +51,28 @@ public class FrontServlet extends HttpServlet {
         String contextPath = request.getContextPath();
         String resourcePath = requestURI.substring(contextPath.length());
         Method mappedMethod = routeMapping.get(resourcePath);
+        System.out.println(" uri : "+requestURI);
+        System.out.println("methode :" +mappedMethod);
         if (mappedMethod != null) {
             try {
-                if (mappedMethod.getReturnType().equals(String.class)) {
-                    Object controller = controllerInstances.get(mappedMethod.getDeclaringClass());
-                    Object result = mappedMethod.invoke(controller);
+                Class<?> returnType = mappedMethod.getReturnType();
+                Object controller = controllerInstances.get(mappedMethod.getDeclaringClass());
+                Object result = mappedMethod.invoke(controller);
+
+                if (returnType.equals(String.class)) {
+
                     response.setContentType("text/html;charset=UTF-8");
                     PrintWriter out = response.getWriter();
                     out.print(result != null ? result.toString() : "(Aucun contenu)");
+                    return ;
+
+                } else if (returnType.equals(ModelView.class)) {
+
+                    ModelView mv = (ModelView) result;
+                    String viewPath = "/WEB-INF/" + mv.getView() + ".jsp";
+                    request.getRequestDispatcher(viewPath).forward(request, response);
+                    return ;
+
                 } else {
                     response.setContentType("text/html;charset=UTF-8");
                     PrintWriter out = response.getWriter();
