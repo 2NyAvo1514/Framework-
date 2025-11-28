@@ -1,6 +1,6 @@
 package mg.framework;
 
-import jakarta.servlet.RequestDispatcher;
+// import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 // import jakarta.servlet.RequestDispatcher;
@@ -10,19 +10,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.lang.reflect.*;
-// import java.net.URL;
 import java.util.*;
-import java.util.logging.*;
 
-import mg.attribute.ModelView;
-// import mg.annotation.Controller;
-// import mg.annotation.Route;
-// import mg.annotation.RouteMapping;
+import mg.attribute.*;
 import mg.util.Scan;
 
 @WebServlet(name = "FrontServlet", urlPatterns = { "/*" }, loadOnStartup = 1)
 public class FrontServlet extends HttpServlet {
-    private static final Logger logger = Logger.getLogger(FrontServlet.class.getName());
+    // private static final Logger logger =
+    // Logger.getLogger(FrontServlet.class.getName());
 
     @Override
     public void init() throws ServletException {
@@ -51,8 +47,8 @@ public class FrontServlet extends HttpServlet {
         String contextPath = request.getContextPath();
         String resourcePath = requestURI.substring(contextPath.length());
         Method mappedMethod = routeMapping.get(resourcePath);
-        System.out.println(" uri : "+requestURI);
-        System.out.println("methode :" +mappedMethod);
+        System.out.println(" uri : " + requestURI);
+        System.out.println("methode :" + mappedMethod);
         if (mappedMethod != null) {
             try {
                 Class<?> returnType = mappedMethod.getReturnType();
@@ -64,15 +60,20 @@ public class FrontServlet extends HttpServlet {
                     response.setContentType("text/html;charset=UTF-8");
                     PrintWriter out = response.getWriter();
                     out.print(result != null ? result.toString() : "(Aucun contenu)");
-                    return ;
+                    return;
 
                 } else if (returnType.equals(ModelView.class)) {
 
                     ModelView mv = (ModelView) result;
                     String viewPath = "/WEB-INF/" + mv.getView() + ".jsp";
                     request.getRequestDispatcher(viewPath).forward(request, response);
-                    return ;
+                    return;
 
+                } else if(returnType instanceof Object){
+                    response.setContentType("text/html;charset=UTF-8");
+                    PrintWriter out = response.getWriter();
+                    out.print(result != null ? result.toString() : "(Aucun contenu)");
+                    return;
                 } else {
                     response.setContentType("text/html;charset=UTF-8");
                     PrintWriter out = response.getWriter();
@@ -174,7 +175,7 @@ public class FrontServlet extends HttpServlet {
         out.println("</head>");
         out.println("<body>");
         out.println("    <div class='container'>");
-        out.println("        <h1>Framework Java</h1>");
+        out.println("        <h1>Home-made Framework Java</h1>");
         out.println("        <h3>Aucune route trouvée pour :</h3>");
         out.println("        <p><code>" + requestedPath + "</code></p>");
         // Map<String, Method> routeMapping = (Map<String, Method>)
